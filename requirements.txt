@@ -1,3 +1,4 @@
 python-dotenv==1.0.1
 openpyxl==3.1.5
 pywin32==306
+gspread==6.1.2
