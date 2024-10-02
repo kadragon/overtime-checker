@@ -1,7 +1,7 @@
 import os
 import shutil
+import pandas as pd
 from typing import Tuple, Optional
-import win32com.client as win32
 from config import DOWNLOAD_DIR, WORK_DIR
 from utils.date_utils import get_current_and_previous_month
 
@@ -23,6 +23,7 @@ def find_target_excel_file(file_type: str) -> Optional[str]:
     file_start, target_filename = file_info
     work_dir = os.path.join(WORK_DIR, prev_month)
     os.makedirs(work_dir, exist_ok=True)
+    os.chmod(work_dir, 0o777)  # 읽기, 쓰기, 실행 권한 부여
 
     for filename in os.listdir(DOWNLOAD_DIR):
         if filename.startswith(file_start + now_month):
@@ -38,21 +39,13 @@ def find_target_excel_file(file_type: str) -> Optional[str]:
     return Exception(f"No {file_type} file found")
 
 
-def convert_xls_to_xlsx(filename: str) -> str:
-    try:
-        xls = win32.gencache.EnsureDispatch('Excel.Application')
-        wb = xls.Workbooks.Open(filename)
+def convert_xls_to_xlsx(xls_file: str) -> str:
+    df = pd.read_excel(xls_file, engine='xlrd')
+    xlsx_file = xls_file.replace(".xls", ".xlsx")
 
-        xlsx_filename = filename + "x"
-        wb.SaveAs(xlsx_filename, FileFormat=51)
-        wb.Close()
-        xls.Application.Quit()
+    df.to_excel(xlsx_file, index=False, engine='openpyxl')
 
-        os.remove(filename)
-        return xlsx_filename
-    except Exception as e:
-        print(f"Error converting {filename} to xlsx: {e}")
-        return filename
+    return xlsx_file
 
 
 def create_meal_expense_file(file_path: str) -> str:

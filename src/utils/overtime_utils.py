@@ -32,7 +32,7 @@ def overtimeCnt(filename):
     overtimeNameCnt = {}
 
     wb = openpyxl.load_workbook(filename)
-    ws = wb['sheet1']
+    ws = wb[wb.sheetnames[0]]
 
     dateCnt = {}
     maxCnt = 0
@@ -124,7 +124,7 @@ def officialDataMaker(filename, overtimeNameCnt):
     row_len = len(ws['A'])
     for i in range(2, row_len-1):
         data[ws['I'][i].value] = [
-            int(ws['K'][i].value.split(':')[0]), int(ws['AB'][i].value)]
+            int(ws['K'][i].value.split(':')[0]), int(ws['AC'][i].value)]
 
     for name in ['윤인자', '이종선', '홍성민', '황미연', '강동욱', '우미인']:
         try:
