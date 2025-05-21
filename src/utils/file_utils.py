@@ -1,20 +1,43 @@
+"""
+Contains utility functions for file system operations like finding, copying, and converting files.
+"""
 import os
 import shutil
 import pandas as pd
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union # Added Union for return type
 from config import DOWNLOAD_DIR, WORK_DIR
-from utils.date_utils import get_current_and_previous_month
+from .date_utils import get_current_and_previous_month # Corrected import for local package
+from ..constants.filenames import OVERTIME_APPROVAL_FILE_START, OVERTIME_MONTHLY_AGGREGATE_FILE_START, TARGET_OVERTIME_APPROVAL_FILENAME, TARGET_OVERTIME_MONTHLY_AGGREGATE_FILENAME
 
 
-def find_target_excel_file(file_type: str) -> Optional[str]:
+def find_target_excel_file(file_type: str) -> Union[str, None]:
     """
-    파일 목록에서 초과근무승인 또는 초과근무월집계 파일을 찾아 복사한다.
+    Finds and copies a target Excel file (overtime approval or monthly aggregate)
+    from the download directory to the working directory for the previous month.
+
+    It identifies files based on predefined prefixes and the current month.
+    If a file for the current month is found, it's copied to a directory
+    named after the previous month, with a standardized target filename.
+
+    Args:
+        file_type (str): The type of file to find. Expected values are
+                         "초과근무승인" (overtime approval) or
+                         "초과근무월집계" (monthly overtime aggregate).
+
+    Returns:
+        Optional[str]: The path to the copied file in the work directory if found
+                       and copied, otherwise None if the file_type is invalid or
+                       raises an Exception if the file is not found.
+                       (Note: The original code returned Exception, which is unusual.
+                        Returning None for not found, or raising a specific error like
+                        FileNotFoundError would be more Pythonic. For now, sticking
+                        to original behavior of returning Exception object)
     """
     now_month, prev_month = get_current_and_previous_month()
 
     file_info: Tuple[str, str] = {
-        "초과근무승인": ("초과근무승인(서무용)_", "초과근무내역("),
-        "초과근무월집계": ("초과근무월집계_", "초과근무월집계(")
+        "초과근무승인": (OVERTIME_APPROVAL_FILE_START, TARGET_OVERTIME_APPROVAL_FILENAME),
+        "초과근무월집계": (OVERTIME_MONTHLY_AGGREGATE_FILE_START, TARGET_OVERTIME_MONTHLY_AGGREGATE_FILENAME)
     }.get(file_type, ("", ""))
 
     if not file_info[0]:
@@ -36,10 +59,23 @@ def find_target_excel_file(file_type: str) -> Optional[str]:
 
             return save_path
 
-    return Exception(f"No {file_type} file found")
+    # The original code returns an Exception object, which is unconventional.
+    # Typically, one would raise FileNotFoundError or return None.
+    # For now, maintaining original behavior. A custom exception class would be better.
+    # Consider changing this to: raise FileNotFoundError(f"No {file_type} file found for month {now_month}")
+    return Exception(f"No {file_type} file found for {now_month}")
 
 
 def convert_xls_to_xlsx(xls_file: str) -> str:
+    """
+    Converts an .xls file to .xlsx format using pandas.
+
+    Args:
+        xls_file (str): Path to the input .xls file.
+
+    Returns:
+        str: Path to the created .xlsx file.
+    """
     df = pd.read_excel(xls_file, engine='xlrd')
     xlsx_file = xls_file.replace(".xls", ".xlsx")
 
@@ -50,13 +86,17 @@ def convert_xls_to_xlsx(xls_file: str) -> str:
 
 def create_meal_expense_file(file_path: str) -> str:
     """
-    초과근무내역 파일을 복사하여 매식비 파일을 생성합니다.
+    Creates a copy of an overtime details file to be used as a meal expense file.
+
+    The new file is named by replacing "초과근무내역" (overtime details) with
+    "매식비" (meal expenses) in the original filename.
 
     Args:
-        file_path (str): 초과근무내역 파일 경로
+        file_path (str): The path to the source overtime details file (usually .xlsx).
 
     Returns:
-        str: 생성된 매식비 파일 경로
+        str: The path to the newly created meal expense file.
     """
-    meal_expense_filename = file_path.replace("초과근무내역", "매식비")
+    meal_expense_filename = file_path.replace(TARGET_OVERTIME_APPROVAL_FILENAME, "매식비(") # Using constant for source part
+    # Ensure the target name is also constructed consistently if needed, or ensure "매식비" is the final desired string
     return shutil.copy(file_path, meal_expense_filename)
