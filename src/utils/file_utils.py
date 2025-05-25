@@ -33,7 +33,7 @@ def find_target_excel_file(file_type: str) -> str:
     }.get(file_type, ("", ""))
 
     if not file_info[0]:
-        raise Exception(f"Invalid file_name")
+        raise ValueError(f"Invalid file_name: {file_type}")
 
     file_start, target_filename = file_info
     work_dir = os.path.join(WORK_DIR, prev_month)

@@ -19,8 +19,15 @@ def require_env_var(name: str, default: Optional[str] = None) -> str:
 load_dotenv()
 
 DOWNLOAD_DIR = require_env_var("DOWNLOAD_DIR")
-WORK_DIR = require_env_var("WORK_DIR", '')
-MEAL_FEE = int(require_env_var("MEAL_FEE", "5500"))
+WORK_DIR = require_env_var("WORK_DIR")
+
+_meal_fee_str = require_env_var("MEAL_FEE")
+try:
+    MEAL_FEE = int(_meal_fee_str)
+except ValueError:
+    raise EnvironmentError(
+        f"환경변수 'MEAL_FEE'는 정수여야 합니다. 제공된 값: '{_meal_fee_str}'")
+
 SPREADSHEET_ID = require_env_var("SPREADSHEET_ID")
 GOOGLE_CREDENTIALS_FILE = require_env_var("GOOGLE_CREDENTIALS_FILE")
 

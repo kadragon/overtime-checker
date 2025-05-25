@@ -11,6 +11,9 @@ from openpyxl.styles import Alignment
 from ..config import MEAL_FEE, EXCLUDED_NAMES_CHECK_OVERTIME, OFFICIAL_DATA_NAMES
 from .excel_utils import apply_default_report_styles
 
+import logging
+logging.basicConfig(level=logging.WARNING)
+
 
 def check_overtime_pay(file_path: str) -> None:
     """
@@ -72,6 +75,12 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
                 dateCnt[value.strftime("%Y-%m-%d")] += 1
             else:
                 dateCnt[value.strftime("%Y-%m-%d")] = 1
+        else:
+            # 날짜가 None이거나 str도 아니면 경고 로그 출력
+            logging.warning(
+                f"[overtimeCnt] 잘못된 날짜 데이터: {value} (타입: {type(value)}) "
+                f"엑셀 파일: {filename}"
+            )
 
         value = row_data[5].value
         if isinstance(value, str):
@@ -79,6 +88,12 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
                 overtimeNameCnt[value] += 1
             else:
                 overtimeNameCnt[value] = 1
+        else:
+            # 이름이 None이거나 str이 아니면 경고 로그 출력
+            logging.warning(
+                f"[overtimeCnt] 잘못된 이름 데이터: {value} (타입: {type(value)}) "
+                f"엑셀 파일: {filename}"
+            )
 
         maxCnt += 1
 
