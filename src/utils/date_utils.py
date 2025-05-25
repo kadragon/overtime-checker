@@ -1,3 +1,6 @@
+"""
+Provides utility functions for date manipulations.
+"""
 import datetime
 
 

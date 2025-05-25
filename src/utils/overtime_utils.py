@@ -1,16 +1,31 @@
+"""
+Includes functions for processing overtime data, such as checking pay conditions,
+counting overtime instances, and preparing data for official reports.
+"""
 import openpyxl
+from typing import Dict  # For type hinting
 
-from openpyxl.styles.fonts import Font
-from openpyxl.styles import Border, Side, Alignment, PatternFill
+# Keep if still needed, remove if not
+from openpyxl.styles import Alignment
 from openpyxl.worksheet.dimensions import ColumnDimension
-from openpyxl.utils import get_column_letter
 
-from config import MEAL_FEE
+from ..config import MEAL_FEE, EXCLUDED_NAMES_CHECK_OVERTIME, OFFICIAL_DATA_NAMES
+from .excel_utils import apply_default_report_styles
 
 
 def check_overtime_pay(file_path: str) -> None:
     """
-    초과근무 수당 체크 프로세스
+    Filters rows in an overtime Excel sheet based on specific conditions
+    and user input for pre-approved overtime.
+
+    Conditions for row deletion include:
+    - Column 'U' value is 'X'.
+    - Name in column 'F' is in the EXCLUDED_NAMES_CHECK_OVERTIME list.
+    - For specific days (Wednesday, Saturday, Sunday), prompts user for
+      confirmation if overtime was pre-approved; deletes row if not.
+
+    Args:
+        file_path (str): Path to the overtime Excel file.
     """
     wb = openpyxl.load_workbook(file_path)
     ws = wb[wb.sheetnames[0]]
@@ -18,7 +33,7 @@ def check_overtime_pay(file_path: str) -> None:
     row_len = len(ws['A'])
 
     for i in range(row_len-1, 0, -1):
-        if ws['U'][i].value == 'X' or ws['F'][i].value in ['김수현', '이상수']:
+        if ws['U'][i].value == 'X' or ws['F'][i].value in EXCLUDED_NAMES_CHECK_OVERTIME:
             ws.delete_rows(i+1, 1)
         else:
             if ws['I'][i].value in ['수요일', '토요일', '일요일']:
@@ -28,8 +43,22 @@ def check_overtime_pay(file_path: str) -> None:
     wb.save(file_path)
 
 
-def overtimeCnt(filename):
-    overtimeNameCnt = {}
+def overtimeCnt(filename: str) -> Dict[str, int]:
+    """
+    Processes an overtime file to count overtime instances per person and
+    generate a summary sheet ('매식비 통계') with meal expenses.
+
+    The summary sheet includes overtime dates, personnel count per date,
+    unit meal fee, total meal expenses per date, and overall totals.
+    It also applies default styling to the new sheet.
+
+    Args:
+        filename (str): Path to the overtime Excel file.
+
+    Returns:
+        Dict[str, int]: A dictionary mapping names to their overtime counts.
+    """
+    overtimeNameCnt: Dict[str, int] = {}
 
     wb = openpyxl.load_workbook(filename)
     ws = wb[wb.sheetnames[0]]
@@ -76,46 +105,30 @@ def overtimeCnt(filename):
     ws2['D'+lastRow] = ''
     ws2['E'+lastRow] = maxCnt*MEAL_FEE
 
-    # Style
-    font_format = Font(size=11, name='맑은 고딕')
-    font_format_bold = Font(size=11, name='맑은 고딕', bold=True)
-    border_format = Side(border_style="thin")
-    align_format_center = Alignment(horizontal="center", vertical="center")
-    align_format_vertical = Alignment(vertical="center")
-    fill_style = PatternFill(start_color="00C0C0C0",
-                             end_color="00C0C0C0", patternType="solid")
-
-    for i in ['B', 'C', 'D', 'E', 'F']:
-        for j in range(0, len(dateCnt)+2):
-            k = str(j+2)
-            ws2[i+k].font = font_format
-            ws2[i+k].border = Border(top=border_format, bottom=border_format,
-                                     left=border_format, right=border_format)
-            if i in ['B', 'C'] or j == 0:
-                ws2[i+k].alignment = align_format_center
-            else:
-                ws2[i+k].alignment = align_format_vertical
-
-            if j in [0, len(dateCnt)+1]:
-                ws2[i+k].font = font_format_bold
-                ws2[i+k].fill = fill_style
-
-            if i in ['D', 'E'] and j > 0:
-                ws2[i+k].number_format = '#,##0'
-
-    for column_cells in ws2.columns:
-        new_column_length = max(len(str(cell.value)) for cell in column_cells)
-        new_column_letter = (get_column_letter(column_cells[0].column))
-
-        if new_column_length > 0:
-            ws2.column_dimensions[new_column_letter].width = new_column_length*1.7
+    apply_default_report_styles(ws2, center_columns=['인원'],
+                                number_columns=['금액', '합계'],
+                                column_style_map={
+        '합계': {'align': Alignment(horizontal="center", vertical="center"), 'format': '#,##0'}
+    })  # Call the new styling function
 
     wb.save(filename)
 
     return overtimeNameCnt
 
 
-def officialDataMaker(filename, overtimeNameCnt):
+def officialDataMaker(filename: str, overtimeNameCnt: Dict[str, int]) -> None:
+    """
+    Reads an overtime monthly aggregate file and combines it with overtime counts
+    to print a summary for specific individuals (defined in OFFICIAL_DATA_NAMES).
+
+    The summary includes name, a value from column 'K' (presumably hours),
+    a value from column 'AC' (presumably another count or amount), and
+    the overtime count from overtimeNameCnt.
+
+    Args:
+        filename (str): Path to the overtime monthly aggregate Excel file.
+        overtimeNameCnt (Dict[str, int]): Dictionary mapping names to overtime counts.
+    """
     wb = openpyxl.load_workbook(filename)
     ws = wb[wb.sheetnames[0]]
 
@@ -126,7 +139,7 @@ def officialDataMaker(filename, overtimeNameCnt):
         data[ws['I'][i].value] = [
             int(ws['K'][i].value.split(':')[0]), int(ws['AC'][i].value)]
 
-    for name in ['윤인자', '이종선', '홍성민', '황미연', '강동욱', '우미인']:
+    for name in OFFICIAL_DATA_NAMES:
         try:
             overtimeNameCnt[name]
         except KeyError:
