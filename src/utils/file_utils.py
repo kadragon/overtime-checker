@@ -4,9 +4,10 @@ Contains utility functions for file system operations like finding, copying, and
 import os
 import shutil
 import pandas as pd
-from typing import Tuple, Optional, Union # Added Union for return type
+from typing import Tuple, Optional, Union  # Added Union for return type
 from config import DOWNLOAD_DIR, WORK_DIR
-from .date_utils import get_current_and_previous_month # Corrected import for local package
+# Corrected import for local package
+from .date_utils import get_current_and_previous_month
 from ..constants.filenames import OVERTIME_APPROVAL_FILE_START, OVERTIME_MONTHLY_AGGREGATE_FILE_START, TARGET_OVERTIME_APPROVAL_FILENAME, TARGET_OVERTIME_MONTHLY_AGGREGATE_FILENAME
 
 
@@ -63,7 +64,7 @@ def find_target_excel_file(file_type: str) -> Union[str, None]:
     # Typically, one would raise FileNotFoundError or return None.
     # For now, maintaining original behavior. A custom exception class would be better.
     # Consider changing this to: raise FileNotFoundError(f"No {file_type} file found for month {now_month}")
-    return Exception(f"No {file_type} file found for {now_month}")
+    raise FileNotFoundError(f"No {file_type} file found for {now_month}")
 
 
 def convert_xls_to_xlsx(xls_file: str) -> str:
@@ -97,6 +98,8 @@ def create_meal_expense_file(file_path: str) -> str:
     Returns:
         str: The path to the newly created meal expense file.
     """
-    meal_expense_filename = file_path.replace(TARGET_OVERTIME_APPROVAL_FILENAME, "매식비(") # Using constant for source part
+    meal_expense_filename = file_path.replace(
+        # Using constant for source part
+        TARGET_OVERTIME_APPROVAL_FILENAME, "매식비(")
     # Ensure the target name is also constructed consistently if needed, or ensure "매식비" is the final desired string
     return shutil.copy(file_path, meal_expense_filename)

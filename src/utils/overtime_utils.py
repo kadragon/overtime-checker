@@ -3,10 +3,11 @@ Includes functions for processing overtime data, such as checking pay conditions
 counting overtime instances, and preparing data for official reports.
 """
 import openpyxl
-from typing import Dict # For type hinting
+from typing import Dict  # For type hinting
 
-from openpyxl.worksheet.dimensions import ColumnDimension # Keep if still needed, remove if not
-# from openpyxl.utils import get_column_letter # This might be in excel_utils now
+# Keep if still needed, remove if not
+from openpyxl.styles import Alignment
+from openpyxl.worksheet.dimensions import ColumnDimension
 
 from ..config import MEAL_FEE, EXCLUDED_NAMES_CHECK_OVERTIME, OFFICIAL_DATA_NAMES
 from .excel_utils import apply_default_report_styles
@@ -104,7 +105,11 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
     ws2['D'+lastRow] = ''
     ws2['E'+lastRow] = maxCnt*MEAL_FEE
 
-    apply_default_report_styles(ws2) # Call the new styling function
+    apply_default_report_styles(ws2, center_columns=['인원'],
+                                number_columns=['금액', '합계'],
+                                column_style_map={
+        '합계': {'align': Alignment(horizontal="center", vertical="center"), 'format': '#,##0'}
+    })  # Call the new styling function
 
     wb.save(filename)
 
