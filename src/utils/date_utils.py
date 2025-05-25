@@ -4,7 +4,7 @@ Provides utility functions for date manipulations.
 import datetime
 
 
-def get_current_and_previous_month():
+def get_current_and_previous_month() -> tuple[str, str]:
     """
     오늘 기준 이번 달과 지난 달의 YYYYMM 형식 문자열을 반환합니다.
 

@@ -4,10 +4,9 @@ counting overtime instances, and preparing data for official reports.
 """
 import openpyxl
 from typing import Dict  # For type hinting
+import datetime
 
-# Keep if still needed, remove if not
 from openpyxl.styles import Alignment
-from openpyxl.worksheet.dimensions import ColumnDimension
 
 from ..config import MEAL_FEE, EXCLUDED_NAMES_CHECK_OVERTIME, OFFICIAL_DATA_NAMES
 from .excel_utils import apply_default_report_styles
@@ -67,22 +66,25 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
     maxCnt = 0
 
     for row_data in ws.iter_rows(2):
-        if row_data[7].value.strftime("%Y-%m-%d") in dateCnt:
-            dateCnt[row_data[7].value.strftime("%Y-%m-%d")] += 1
-        else:
-            dateCnt[row_data[7].value.strftime("%Y-%m-%d")] = 1
+        value = row_data[7].value
+        if isinstance(value, datetime.datetime):
+            if value.strftime("%Y-%m-%d") in dateCnt:
+                dateCnt[value.strftime("%Y-%m-%d")] += 1
+            else:
+                dateCnt[value.strftime("%Y-%m-%d")] = 1
 
-        if row_data[5].value in overtimeNameCnt:
-            overtimeNameCnt[row_data[5].value] += 1
-        else:
-            overtimeNameCnt[row_data[5].value] = 1
+        value = row_data[5].value
+        if isinstance(value, str):
+            if value in overtimeNameCnt:
+                overtimeNameCnt[value] += 1
+            else:
+                overtimeNameCnt[value] = 1
 
         maxCnt += 1
 
     dateCnt = sorted(dateCnt.items())
 
     ws2 = wb.create_sheet("매식비 통계", 0)
-    ColumnDimension(ws2, bestFit=True)
 
     # 데이터 채우기
     ws2['B2'] = "초과근무일자"
