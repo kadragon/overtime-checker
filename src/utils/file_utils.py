@@ -4,14 +4,14 @@ Contains utility functions for file system operations like finding, copying, and
 import os
 import shutil
 import pandas as pd
-from typing import Tuple, Optional, Union  # Added Union for return type
+from typing import Tuple
 from config import DOWNLOAD_DIR, WORK_DIR
-# Corrected import for local package
+
 from .date_utils import get_current_and_previous_month
 from ..constants.filenames import OVERTIME_APPROVAL_FILE_START, OVERTIME_MONTHLY_AGGREGATE_FILE_START, TARGET_OVERTIME_APPROVAL_FILENAME, TARGET_OVERTIME_MONTHLY_AGGREGATE_FILENAME
 
 
-def find_target_excel_file(file_type: str) -> Union[str, None]:
+def find_target_excel_file(file_type: str) -> str:
     """
     Finds and copies a target Excel file (overtime approval or monthly aggregate)
     from the download directory to the working directory for the previous month.
@@ -24,15 +24,6 @@ def find_target_excel_file(file_type: str) -> Union[str, None]:
         file_type (str): The type of file to find. Expected values are
                          "초과근무승인" (overtime approval) or
                          "초과근무월집계" (monthly overtime aggregate).
-
-    Returns:
-        Optional[str]: The path to the copied file in the work directory if found
-                       and copied, otherwise None if the file_type is invalid or
-                       raises an Exception if the file is not found.
-                       (Note: The original code returned Exception, which is unusual.
-                        Returning None for not found, or raising a specific error like
-                        FileNotFoundError would be more Pythonic. For now, sticking
-                        to original behavior of returning Exception object)
     """
     now_month, prev_month = get_current_and_previous_month()
 
@@ -42,7 +33,7 @@ def find_target_excel_file(file_type: str) -> Union[str, None]:
     }.get(file_type, ("", ""))
 
     if not file_info[0]:
-        return None
+        raise ValueError(f"Invalid file_name: {file_type}")
 
     file_start, target_filename = file_info
     work_dir = os.path.join(WORK_DIR, prev_month)
