@@ -29,7 +29,6 @@ OFFICIAL_DATA_NAMES = [
 def check_overtime_pay(file_path: str) -> None:
     """
     '매식비'라는 헤더의 컬럼에서 값이 'X'인 행을 삭제한다.
-    기타 기존 조건도 유지.
     """
     wb = openpyxl.load_workbook(file_path)
     ws = wb[wb.sheetnames[0]]
@@ -111,37 +110,6 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
         maxCnt += 1
 
     dateCnt = sorted(dateCnt.items())
-
-    # ws2 = wb.create_sheet("매식비 통계", 0)
-
-    # # 데이터 채우기
-    # ws2['B1'] = "초과근무일자"
-    # ws2['C1'] = '인원'
-    # ws2['D1'] = '단가'
-    # ws2['E1'] = '금액'
-    # ws2['F1'] = '비고'
-
-    # for i in range(0, len(dateCnt)):
-    #     j = str(i+2)
-    #     (date, cnt) = dateCnt[i]
-    #     ws2['B'+j] = date
-    #     ws2['C'+j] = cnt
-    #     ws2['D'+j] = MEAL_FEE
-    #     ws2['E'+j] = cnt*MEAL_FEE
-
-    # lastRow = str(len(dateCnt)+3)
-    # ws2['B'+lastRow] = '합계'
-    # ws2['C'+lastRow] = maxCnt
-    # ws2['D'+lastRow] = ''
-    # ws2['E'+lastRow] = maxCnt*MEAL_FEE
-
-    # apply_default_report_styles(ws2, center_columns=['인원'],
-    #                             number_columns=['금액', '합계'],
-    #                             column_style_map={
-    #     '합계': {'align': Alignment(horizontal="center", vertical="center"), 'format': '#,##0'}
-    # })  # Call the new styling function
-
-    # wb.save(filename)
 
     return overtimeNameCnt
 
