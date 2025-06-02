@@ -11,7 +11,11 @@ from utils.date_utils import get_current_and_previous_month
 
 
 DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR")
+if DOWNLOAD_DIR is None:
+    raise EnvironmentError("환경변수 'DOWNLOAD_DIR'가 설정되어 있지 않습니다.")
 WORK_DIR = os.getenv("WORK_DIR")
+if WORK_DIR is None:
+    raise EnvironmentError("환경변수 'WORK_DIR'가 설정되어 있지 않습니다.")
 
 OVERTIME_APPROVAL_FILE_START = "초과근무승인(서무용)_"
 OVERTIME_MONTHLY_AGGREGATE_FILE_START = "초과근무월집계_"
