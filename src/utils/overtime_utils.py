@@ -2,45 +2,54 @@
 Includes functions for processing overtime data, such as checking pay conditions,
 counting overtime instances, and preparing data for official reports.
 """
-import openpyxl
-from typing import Dict  # For type hinting
+import os
+import logging
+from typing import Dict
 import datetime
 
+import openpyxl
 from openpyxl.styles import Alignment
 
-from ..config import MEAL_FEE, EXCLUDED_NAMES_CHECK_OVERTIME, OFFICIAL_DATA_NAMES
-from .excel_utils import apply_default_report_styles
+from utils.excel_utils import apply_default_report_styles
 
-import logging
 logging.basicConfig(level=logging.WARNING)
+
+
+MEAL_FEE = int(os.getenv("MEAL_FEE", 5500))
+
+OFFICIAL_DATA_NAMES_STR = os.getenv("OFFICIAL_DATA_NAMES_STR", "")
+OFFICIAL_DATA_NAMES = [
+    name.strip() for name in OFFICIAL_DATA_NAMES_STR.split(',') if name.strip()]
 
 
 def check_overtime_pay(file_path: str) -> None:
     """
-    Filters rows in an overtime Excel sheet based on specific conditions
-    and user input for pre-approved overtime.
-
-    Conditions for row deletion include:
-    - Column 'U' value is 'X'.
-    - Name in column 'F' is in the EXCLUDED_NAMES_CHECK_OVERTIME list.
-    - For specific days (Wednesday, Saturday, Sunday), prompts user for
-      confirmation if overtime was pre-approved; deletes row if not.
-
-    Args:
-        file_path (str): Path to the overtime Excel file.
+    '매식비'라는 헤더의 컬럼에서 값이 'X'인 행을 삭제한다.
+    기타 기존 조건도 유지.
     """
     wb = openpyxl.load_workbook(file_path)
     ws = wb[wb.sheetnames[0]]
 
-    row_len = len(ws['A'])
+    # 1. 헤더(1행)에서 '매식비' 컬럼 인덱스 찾기
+    header_row = ws[1]
+    meal_col_idx = None
 
-    for i in range(row_len-1, 0, -1):
-        if ws['U'][i].value == 'X' or ws['F'][i].value in EXCLUDED_NAMES_CHECK_OVERTIME:
-            ws.delete_rows(i+1, 1)
-        else:
-            if ws['I'][i].value in ['수요일', '토요일', '일요일']:
-                if input(ws['F'][i].value + " | " + ws['H'][i].value.strftime("%Y-%m-%d") + " | " + ws['I'][i].value + " | 사전 보고 확인? :").upper() == 'N':
-                    ws.delete_rows(i+1, 1)
+    for idx, cell in enumerate(header_row, 1):  # 1-based index
+        if cell.value == '매식비':
+            meal_col_idx = idx
+            break
+
+    if meal_col_idx is None:
+        print("❌ '매식비'라는 헤더가 없습니다.")
+        return
+
+    row_len = ws.max_row
+
+    # 2. 아래에서 위로 데이터 행 반복
+    for i in range(row_len, 1, -1):  # 2행부터 시작, 1행(헤더)는 제외
+        if ws.cell(row=i, column=meal_col_idx).value == 'X':
+            ws.delete_rows(i, 1)
+            continue  # 삭제 시, 다음 라인으로
 
     wb.save(file_path)
 
@@ -99,36 +108,36 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
 
     dateCnt = sorted(dateCnt.items())
 
-    ws2 = wb.create_sheet("매식비 통계", 0)
+    # ws2 = wb.create_sheet("매식비 통계", 0)
 
-    # 데이터 채우기
-    ws2['B2'] = "초과근무일자"
-    ws2['C2'] = '인원'
-    ws2['D2'] = '단가'
-    ws2['E2'] = '금액'
-    ws2['F2'] = '비고'
+    # # 데이터 채우기
+    # ws2['B1'] = "초과근무일자"
+    # ws2['C1'] = '인원'
+    # ws2['D1'] = '단가'
+    # ws2['E1'] = '금액'
+    # ws2['F1'] = '비고'
 
-    for i in range(0, len(dateCnt)):
-        j = str(i+3)
-        (date, cnt) = dateCnt[i]
-        ws2['B'+j] = date
-        ws2['C'+j] = cnt
-        ws2['D'+j] = MEAL_FEE
-        ws2['E'+j] = cnt*MEAL_FEE
+    # for i in range(0, len(dateCnt)):
+    #     j = str(i+2)
+    #     (date, cnt) = dateCnt[i]
+    #     ws2['B'+j] = date
+    #     ws2['C'+j] = cnt
+    #     ws2['D'+j] = MEAL_FEE
+    #     ws2['E'+j] = cnt*MEAL_FEE
 
-    lastRow = str(len(dateCnt)+3)
-    ws2['B'+lastRow] = '합계'
-    ws2['C'+lastRow] = maxCnt
-    ws2['D'+lastRow] = ''
-    ws2['E'+lastRow] = maxCnt*MEAL_FEE
+    # lastRow = str(len(dateCnt)+3)
+    # ws2['B'+lastRow] = '합계'
+    # ws2['C'+lastRow] = maxCnt
+    # ws2['D'+lastRow] = ''
+    # ws2['E'+lastRow] = maxCnt*MEAL_FEE
 
-    apply_default_report_styles(ws2, center_columns=['인원'],
-                                number_columns=['금액', '합계'],
-                                column_style_map={
-        '합계': {'align': Alignment(horizontal="center", vertical="center"), 'format': '#,##0'}
-    })  # Call the new styling function
+    # apply_default_report_styles(ws2, center_columns=['인원'],
+    #                             number_columns=['금액', '합계'],
+    #                             column_style_map={
+    #     '합계': {'align': Alignment(horizontal="center", vertical="center"), 'format': '#,##0'}
+    # })  # Call the new styling function
 
-    wb.save(filename)
+    # wb.save(filename)
 
     return overtimeNameCnt
 
@@ -156,11 +165,15 @@ def officialDataMaker(filename: str, overtimeNameCnt: Dict[str, int]) -> None:
         data[ws['I'][i].value] = [
             int(ws['K'][i].value.split(':')[0]), int(ws['AC'][i].value)]
 
+    print("\n%s | %s | %s | %s" %
+          ("성명", "초과", "출근", "매식비"))
+
     for name in OFFICIAL_DATA_NAMES:
         try:
             overtimeNameCnt[name]
         except KeyError:
             overtimeNameCnt[name] = 0
-
         print("%s | %2d | %2d | %2d" %
               (name, data[name][0], data[name][1], overtimeNameCnt[name]))
+
+    print("\n")

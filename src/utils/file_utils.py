@@ -3,12 +3,20 @@ Contains utility functions for file system operations like finding, copying, and
 """
 import os
 import shutil
-import pandas as pd
 from typing import Tuple
-from config import DOWNLOAD_DIR, WORK_DIR
 
-from .date_utils import get_current_and_previous_month
-from ..constants.filenames import OVERTIME_APPROVAL_FILE_START, OVERTIME_MONTHLY_AGGREGATE_FILE_START, TARGET_OVERTIME_APPROVAL_FILENAME, TARGET_OVERTIME_MONTHLY_AGGREGATE_FILENAME
+import pandas as pd
+
+from utils.date_utils import get_current_and_previous_month
+
+
+DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR")
+WORK_DIR = os.getenv("WORK_DIR")
+
+OVERTIME_APPROVAL_FILE_START = "초과근무승인(서무용)_"
+OVERTIME_MONTHLY_AGGREGATE_FILE_START = "초과근무월집계_"
+TARGET_OVERTIME_APPROVAL_FILENAME = "초과근무내역("
+TARGET_OVERTIME_MONTHLY_AGGREGATE_FILENAME = "초과근무월집계("
 
 
 def find_target_excel_file(file_type: str) -> str:
