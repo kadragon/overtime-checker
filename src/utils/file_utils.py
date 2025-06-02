@@ -50,7 +50,6 @@ def find_target_excel_file(file_type: str) -> str:
     file_start, target_filename = file_info
     work_dir = os.path.join(WORK_DIR, prev_month)
     os.makedirs(work_dir, exist_ok=True)
-    os.chmod(work_dir, 0o777)  # 읽기, 쓰기, 실행 권한 부여
 
     for filename in os.listdir(DOWNLOAD_DIR):
         if filename.startswith(file_start + now_month):
