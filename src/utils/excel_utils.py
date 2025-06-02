@@ -1,8 +1,13 @@
 """
 Provides utility functions for working with Excel files, focusing on styling and formatting.
 """
+import logging
+
 from openpyxl.styles import Font, Border, Side, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
+
+
+logger = logging.getLogger(__name__)
 
 
 def apply_default_report_styles(
@@ -93,5 +98,5 @@ def apply_default_report_styles(
             if adjusted_width < 10:
                 adjusted_width = 10
             ws.column_dimensions[new_column_letter].width = adjusted_width
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"열 자동 너비 설정 실패 (열 {col_idx}): {e}")
