@@ -19,7 +19,7 @@ try:
     MEAL_FEE = int(os.getenv("MEAL_FEE", 5500))
 except ValueError:
     raise EnvironmentError(
-        f"환경변수 'MEAL_FEE'는 정수여야 합니다. 제공된 값: '{os.getenv("MEAL_FEE")}'")
+        f"환경변수 'MEAL_FEE'는 정수여야 합니다. 제공된 값: '{os.getenv('MEAL_FEE')}'")
 
 OFFICIAL_DATA_NAMES_STR = os.getenv("OFFICIAL_DATA_NAMES_STR", "")
 OFFICIAL_DATA_NAMES = [

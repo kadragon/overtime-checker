@@ -1,6 +1,10 @@
+from dotenv import load_dotenv
+
+# .env 파일을 먼저 로드하여 이후 모듈들이 환경변수를 사용할 수 있도록 한다.
+load_dotenv()
+
 from utils.file_utils import find_target_excel_file, convert_xls_to_xlsx, create_meal_expense_file
 from utils.overtime_utils import check_overtime_pay, overtimeCnt, officialDataMaker
-from dotenv import load_dotenv
 
 
 def find_and_convert_excel(keyword):
@@ -32,7 +36,6 @@ def generate_official_data(monthly_xlsx, count_data):
 
 
 def main():
-    load_dotenv()
     print("초과근무승인 파일 처리를 시작합니다.")
 
     # 1. 초과근무승인 파일 찾기 → 변환
