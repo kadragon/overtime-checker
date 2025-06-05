@@ -19,6 +19,10 @@ def browse_directory(var: tk.StringVar) -> None:
 
 
 def run_script() -> None:
+    """
+    Runs the main script with the environment variables set from the GUI.
+    Displays a success or error message upon completion.
+    """
     # Ensure required environment variables are provided
     if not download_var.get().strip() or not work_var.get().strip():
         messagebox.showwarning("입력 필요", "DOWNLOAD_DIR과 WORK_DIR을 모두 설정하세요.")
