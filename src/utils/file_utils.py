@@ -10,13 +10,6 @@ import pandas as pd
 from utils.date_utils import get_current_and_previous_month
 
 
-DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR")
-if DOWNLOAD_DIR is None:
-    raise EnvironmentError("환경변수 'DOWNLOAD_DIR'가 설정되어 있지 않습니다.")
-WORK_DIR = os.getenv("WORK_DIR")
-if WORK_DIR is None:
-    raise EnvironmentError("환경변수 'WORK_DIR'가 설정되어 있지 않습니다.")
-
 OVERTIME_APPROVAL_FILE_START = "초과근무승인(서무용)_"
 OVERTIME_MONTHLY_AGGREGATE_FILE_START = "초과근무월집계_"
 TARGET_OVERTIME_APPROVAL_FILENAME = "초과근무내역("
@@ -37,6 +30,13 @@ def find_target_excel_file(file_type: str) -> str:
                          "초과근무승인" (overtime approval) or
                          "초과근무월집계" (monthly overtime aggregate).
     """
+    DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR")
+    if DOWNLOAD_DIR is None:
+        raise EnvironmentError("환경변수 'DOWNLOAD_DIR'가 설정되어 있지 않습니다.")
+    WORK_DIR = os.getenv("WORK_DIR")
+    if WORK_DIR is None:
+        raise EnvironmentError("환경변수 'WORK_DIR'가 설정되어 있지 않습니다.")
+
     now_month, prev_month = get_current_and_previous_month()
 
     file_info: Tuple[str, str] = {
