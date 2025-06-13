@@ -2,6 +2,10 @@ import os
 import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+from tkinter.scrolledtext import ScrolledText
+import io
+import subprocess
+import platform
 
 import shutil
 
@@ -32,6 +36,37 @@ style_config = {
 }
 
 
+class TextRedirector(io.TextIOBase):
+    """Redirect stdout to a text widget."""
+
+    def __init__(self, widget: tk.Text) -> None:
+        self.widget = widget
+
+    def write(self, text: str) -> int:
+        self.widget.configure(state="normal")
+        self.widget.insert(tk.END, text)
+        self.widget.see(tk.END)
+        self.widget.configure(state="disabled")
+        self.widget.update_idletasks()
+        return len(text)
+
+    def flush(self) -> None:  # pragma: no cover - nothing to flush
+        pass
+
+
+def open_folder(path: str) -> None:
+    """Open folder in OS file explorer."""
+    try:
+        if platform.system() == "Windows":
+            os.startfile(path)
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", path])
+        else:
+            subprocess.Popen(["xdg-open", path])
+    except Exception:
+        pass
+
+
 def browse_directory(var: tk.StringVar) -> None:
     path = filedialog.askdirectory()
     if path:
@@ -54,9 +89,17 @@ def run_script() -> None:
     meal_fee = meal_var.get()
     official_data_names_str = names_var.get()
 
+    old_stdout = sys.stdout
     try:
+        run_button.state(["disabled"])
+        log_text.configure(state="normal")
+        log_text.delete("1.0", tk.END)
+        log_text.configure(state="disabled")
+
+        sys.stdout = TextRedirector(log_text)
         cli_main(download_dir, work_dir, meal_fee, official_data_names_str)
         messagebox.showinfo("완료", "처리가 완료되었습니다.")
+        open_folder(work_dir)
     except Exception as exc:
         messagebox.showerror(
             "오류",
@@ -66,6 +109,9 @@ def run_script() -> None:
             f"MEAL_FEE: {meal_fee}\n"
             f"OFFICIAL_DATA_NAMES_STR: {official_data_names_str}"
         )
+    finally:
+        sys.stdout = old_stdout
+        run_button.state(["!disabled"])
 
 
 def save_and_exit():
@@ -80,6 +126,7 @@ def save_and_exit():
 
 root = tk.Tk()
 root.title("초과근무 처리 도구")
+root.minsize(600, 500)
 
 # ---- Material-like styling ----
 root.configure(bg=style_config["background_color"])
@@ -111,7 +158,8 @@ style.map(
                 ("!disabled", style_config["primary_color"])]
 )
 
-main_frame = ttk.Frame(root, padding=20)
+# Use generous padding to create breathing room around widgets
+main_frame = ttk.Frame(root, padding=30)
 main_frame.grid(sticky="nsew")
 
 # Variables with defaults from the environment
@@ -134,43 +182,48 @@ def validate_fields(*_: str) -> None:
 
 # DOWNLOAD_DIR
 ttk.Label(main_frame, text="다운로드 폴더").grid(
-    row=0, column=0, sticky="e", pady=8, padx=10)
+    row=0, column=0, sticky="e", pady=12, padx=20)
 entry_download = ttk.Entry(main_frame, textvariable=download_var, width=40)
-entry_download.grid(row=0, column=1, padx=10, pady=8, sticky="ew")
+entry_download.grid(row=0, column=1, padx=20, pady=12, sticky="ew")
 btn_download = ttk.Button(main_frame, text="찾기", style="Material.TButton",
                           command=lambda: browse_directory(download_var))
-btn_download.grid(row=0, column=2, pady=8, padx=10, sticky="ew")
+btn_download.grid(row=0, column=2, pady=12, padx=20, sticky="ew")
 
 # WORK_DIR
 ttk.Label(main_frame, text="작업결과 저장 폴더").grid(
-    row=1, column=0, sticky="e", pady=8, padx=10)
+    row=1, column=0, sticky="e", pady=12, padx=20)
 entry_work = ttk.Entry(main_frame, textvariable=work_var, width=40)
-entry_work.grid(row=1, column=1, padx=10, pady=8, sticky="ew")
+entry_work.grid(row=1, column=1, padx=20, pady=12, sticky="ew")
 btn_work = ttk.Button(main_frame, text="찾기", style="Material.TButton",
                       command=lambda: browse_directory(work_var))
-btn_work.grid(row=1, column=2, pady=8, padx=10, sticky="ew")
+btn_work.grid(row=1, column=2, pady=12, padx=20, sticky="ew")
 
 # MEAL_FEE
 ttk.Label(main_frame, text="매식비 기준 금액").grid(
-    row=2, column=0, sticky="e", pady=8, padx=10)
+    row=2, column=0, sticky="e", pady=12, padx=20)
 ttk.Entry(main_frame, textvariable=meal_var).grid(
-    row=2, column=1, columnspan=2, sticky="ew", padx=10, pady=8)
+    row=2, column=1, columnspan=2, sticky="ew", padx=20, pady=12)
 
 # OFFICIAL_DATA_NAMES_STR
 ttk.Label(main_frame, text="대상자 이름").grid(
-    row=3, column=0, sticky="e", pady=8, padx=10)
+    row=3, column=0, sticky="e", pady=12, padx=20)
 ttk.Entry(main_frame, textvariable=names_var).grid(
-    row=3, column=1, columnspan=2, sticky="ew", padx=10, pady=8)
+    row=3, column=1, columnspan=2, sticky="ew", padx=20, pady=12)
 
 # Run button and warning label
 run_button = ttk.Button(main_frame, text="실행",
                         style="Material.TButton", command=run_script)
 run_button.grid(row=4, column=0, columnspan=2,
-                pady=(16, 8), padx=10, sticky="ew")
+                pady=(20, 12), padx=20, sticky="ew")
 
 exit_button = ttk.Button(main_frame, text="종료",
                          style="Material.TButton", command=save_and_exit)
-exit_button.grid(row=4, column=2, pady=(16, 8), padx=10, sticky="ew")
+exit_button.grid(row=4, column=2, pady=(20, 12), padx=20, sticky="ew")
+
+# Log output area
+log_text = ScrolledText(main_frame, height=10, state="disabled",
+                        font=style_config["font"])
+log_text.grid(row=5, column=0, columnspan=3, sticky="nsew", padx=20, pady=(0, 20))
 
 # Optional: Add tooltip for run_button when disabled
 
@@ -205,7 +258,7 @@ warning_label = ttk.Label(
     text="DOWNLOAD_DIR과 WORK_DIR을 모두 입력하세요.",
     foreground="red",
 )
-warning_label.grid(row=5, column=0, columnspan=3, pady=(4, 0), padx=10)
+warning_label.grid(row=6, column=0, columnspan=3, pady=(4, 0), padx=20)
 warning_label.grid_remove()
 
 # Validate fields whenever they change
@@ -216,5 +269,6 @@ validate_fields()
 root.columnconfigure(0, weight=1)
 root.rowconfigure(0, weight=1)
 main_frame.columnconfigure(1, weight=1)
+main_frame.rowconfigure(5, weight=1)
 
 root.mainloop()
