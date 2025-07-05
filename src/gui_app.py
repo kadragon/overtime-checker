@@ -7,9 +7,7 @@ import io
 import subprocess
 import platform
 
-import shutil
-
-from dotenv import load_dotenv
+from utils.config_utils import load_config, save_config
 
 from main import main as cli_main
 
@@ -18,14 +16,9 @@ sys.path.append(os.path.dirname(__file__))
 
 
 project_root = os.path.dirname(os.path.dirname(__file__))
-# Ensure .env exists by copying from .env.example if necessary
-env_path = os.path.join(project_root, ".env")
-example_path = os.path.join(project_root, ".env.example")
-if not os.path.isfile(env_path) and os.path.isfile(example_path):
-    shutil.copy(example_path, env_path)
 
-# Load existing environment variables from .env if present
-load_dotenv()
+# Load configuration from pickle file
+config = load_config()
 
 # Define style configuration
 style_config = {
@@ -115,12 +108,15 @@ def run_script() -> None:
 
 
 def save_and_exit():
-    """입력값을 .env 파일에 저장하고 프로그램 종료"""
-    with open(os.path.join(project_root, '.env'), 'w', encoding='utf-8') as f:
-        f.write(f"DOWNLOAD_DIR={download_var.get()}\n")
-        f.write(f"WORK_DIR={work_var.get()}\n")
-        f.write(f"MEAL_FEE={meal_var.get()}\n")
-        f.write(f"OFFICIAL_DATA_NAMES_STR={names_var.get()}\n")
+    """Save current values to the configuration file and exit."""
+    save_config(
+        {
+            "DOWNLOAD_DIR": download_var.get(),
+            "WORK_DIR": work_var.get(),
+            "MEAL_FEE": meal_var.get(),
+            "OFFICIAL_DATA_NAMES_STR": names_var.get(),
+        }
+    )
     root.destroy()
 
 
@@ -162,11 +158,11 @@ style.map(
 main_frame = ttk.Frame(root, padding=30)
 main_frame.grid(sticky="nsew")
 
-# Variables with defaults from the environment
-download_var = tk.StringVar(value=os.getenv("DOWNLOAD_DIR", ""))
-work_var = tk.StringVar(value=os.getenv("WORK_DIR", ""))
-meal_var = tk.StringVar(value=os.getenv("MEAL_FEE", "5500"))
-names_var = tk.StringVar(value=os.getenv("OFFICIAL_DATA_NAMES_STR", ""))
+# Variables with defaults from configuration
+download_var = tk.StringVar(value=config.get("DOWNLOAD_DIR", ""))
+work_var = tk.StringVar(value=config.get("WORK_DIR", ""))
+meal_var = tk.StringVar(value=config.get("MEAL_FEE", "5500"))
+names_var = tk.StringVar(value=config.get("OFFICIAL_DATA_NAMES_STR", ""))
 
 
 def validate_fields(*_: str) -> None:

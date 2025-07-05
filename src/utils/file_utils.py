@@ -16,7 +16,7 @@ TARGET_OVERTIME_APPROVAL_FILENAME = "초과근무내역("
 TARGET_OVERTIME_MONTHLY_AGGREGATE_FILENAME = "초과근무월집계("
 
 
-def find_target_excel_file(file_type: str) -> str:
+def find_target_excel_file(file_type: str, download_dir: str, work_dir: str) -> str:
     """
     Finds and copies a target Excel file (overtime approval or monthly aggregate)
     from the download directory to the working directory for the previous month.
@@ -27,15 +27,17 @@ def find_target_excel_file(file_type: str) -> str:
 
     Args:
         file_type (str): The type of file to find. Expected values are
-                         "초과근무승인" (overtime approval) or
-                         "초과근무월집계" (monthly overtime aggregate).
+            "초과근무승인" (overtime approval) or "초과근무월집계" (monthly
+            overtime aggregate).
+        download_dir (str): Directory where downloaded Excel files are located.
+        work_dir (str): Directory where processed files will be saved.
     """
-    DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR")
-    if DOWNLOAD_DIR is None:
-        raise EnvironmentError("환경변수 'DOWNLOAD_DIR'가 설정되어 있지 않습니다.")
-    WORK_DIR = os.getenv("WORK_DIR")
-    if WORK_DIR is None:
-        raise EnvironmentError("환경변수 'WORK_DIR'가 설정되어 있지 않습니다.")
+    DOWNLOAD_DIR = download_dir
+    if not DOWNLOAD_DIR:
+        raise EnvironmentError("DOWNLOAD_DIR가 설정되어 있지 않습니다.")
+    WORK_DIR = work_dir
+    if not WORK_DIR:
+        raise EnvironmentError("WORK_DIR가 설정되어 있지 않습니다.")
 
     now_month, prev_month = get_current_and_previous_month()
 
