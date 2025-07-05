@@ -16,7 +16,7 @@ TARGET_OVERTIME_APPROVAL_FILENAME = "초과근무내역("
 TARGET_OVERTIME_MONTHLY_AGGREGATE_FILENAME = "초과근무월집계("
 
 
-def find_target_excel_file(file_type: str) -> str:
+def find_target_excel_file(file_type: str, download_dir: str, work_dir: str) -> str:
     """
     Finds and copies a target Excel file (overtime approval or monthly aggregate)
     from the download directory to the working directory for the previous month.
@@ -27,15 +27,15 @@ def find_target_excel_file(file_type: str) -> str:
 
     Args:
         file_type (str): The type of file to find. Expected values are
-                         "초과근무승인" (overtime approval) or
-                         "초과근무월집계" (monthly overtime aggregate).
+            "초과근무승인" (overtime approval) or "초과근무월집계" (monthly
+            overtime aggregate).
+        download_dir (str): Directory where downloaded Excel files are located.
+        work_dir (str): Directory where processed files will be saved.
     """
-    DOWNLOAD_DIR = os.getenv("DOWNLOAD_DIR")
-    if DOWNLOAD_DIR is None:
-        raise EnvironmentError("환경변수 'DOWNLOAD_DIR'가 설정되어 있지 않습니다.")
-    WORK_DIR = os.getenv("WORK_DIR")
-    if WORK_DIR is None:
-        raise EnvironmentError("환경변수 'WORK_DIR'가 설정되어 있지 않습니다.")
+    if not download_dir:
+        raise ValueError("A download directory must be provided.")
+    if not work_dir:
+        raise ValueError("A work directory must be provided.")
 
     now_month, prev_month = get_current_and_previous_month()
 
@@ -48,12 +48,12 @@ def find_target_excel_file(file_type: str) -> str:
         raise ValueError(f"Invalid file_name: {file_type}")
 
     file_start, target_filename = file_info
-    work_dir = os.path.join(WORK_DIR, prev_month)
+    work_dir = os.path.join(work_dir, prev_month)
     os.makedirs(work_dir, exist_ok=True)
 
-    for filename in os.listdir(DOWNLOAD_DIR):
+    for filename in os.listdir(download_dir):
         if filename.startswith(file_start + now_month):
-            base_path = os.path.join(DOWNLOAD_DIR, filename)
+            base_path = os.path.join(download_dir, filename)
             save_path = os.path.join(
                 work_dir, f"{target_filename}{prev_month}).xls")
 

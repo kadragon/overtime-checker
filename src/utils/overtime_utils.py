@@ -2,9 +2,8 @@
 Includes functions for processing overtime data, such as checking pay conditions,
 counting overtime instances, and preparing data for official reports.
 """
-import os
 import logging
-from typing import Dict
+from typing import Dict, List
 import datetime
 
 import openpyxl
@@ -15,15 +14,6 @@ from utils.excel_utils import apply_default_report_styles
 logging.basicConfig(level=logging.WARNING)
 
 
-try:
-    MEAL_FEE = int(os.getenv("MEAL_FEE", 5500))
-except ValueError:
-    raise EnvironmentError(
-        f"환경변수 'MEAL_FEE'는 정수여야 합니다. 제공된 값: '{os.getenv('MEAL_FEE')}'")
-
-OFFICIAL_DATA_NAMES_STR = os.getenv("OFFICIAL_DATA_NAMES_STR", "")
-OFFICIAL_DATA_NAMES = [
-    name.strip() for name in OFFICIAL_DATA_NAMES_STR.split(',') if name.strip()]
 
 
 def check_overtime_pay(file_path: str) -> None:
@@ -114,10 +104,12 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
     return overtimeNameCnt
 
 
-def officialDataMaker(filename: str, overtimeNameCnt: Dict[str, int]) -> None:
+def officialDataMaker(
+    filename: str, overtimeNameCnt: Dict[str, int], official_data_names: List[str]
+) -> None:
     """
     Reads an overtime monthly aggregate file and combines it with overtime counts
-    to print a summary for specific individuals (defined in OFFICIAL_DATA_NAMES).
+    to print a summary for specific individuals provided via ``official_data_names``.
 
     The summary includes name, a value from column 'K' (presumably hours),
     a value from column 'AC' (presumably another count or amount), and
@@ -126,6 +118,7 @@ def officialDataMaker(filename: str, overtimeNameCnt: Dict[str, int]) -> None:
     Args:
         filename (str): Path to the overtime monthly aggregate Excel file.
         overtimeNameCnt (Dict[str, int]): Dictionary mapping names to overtime counts.
+        official_data_names (List[str]): Names to include in the summary.
     """
     wb = openpyxl.load_workbook(filename)
     ws = wb[wb.sheetnames[0]]
@@ -140,7 +133,7 @@ def officialDataMaker(filename: str, overtimeNameCnt: Dict[str, int]) -> None:
     print("\n%s | %s | %s | %s" %
           ("성명", "초과", "출근", "매식비"))
 
-    for name in OFFICIAL_DATA_NAMES:
+    for name in official_data_names:
         try:
             overtimeNameCnt[name]
         except KeyError:
