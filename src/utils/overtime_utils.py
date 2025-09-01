@@ -11,7 +11,7 @@ from openpyxl.styles import Alignment
 
 from utils.excel_utils import apply_default_report_styles
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
 
 
@@ -111,10 +111,6 @@ def officialDataMaker(
     Reads an overtime monthly aggregate file and combines it with overtime counts
     to print a summary for specific individuals provided via ``official_data_names``.
 
-    The summary includes name, a value from column 'K' (presumably hours),
-    a value from column 'AC' (presumably another count or amount), and
-    the overtime count from overtimeNameCnt.
-
     Args:
         filename (str): Path to the overtime monthly aggregate Excel file.
         overtimeNameCnt (Dict[str, int]): Dictionary mapping names to overtime counts.
@@ -125,20 +121,49 @@ def officialDataMaker(
 
     data = {}
 
-    row_len = len(ws['A'])
-    for i in range(2, row_len-1):
-        data[ws['I'][i].value] = [
-            int(ws['K'][i].value.split(':')[0]), int(ws['AC'][i].value)]
+    # 데이터는 행 3부터 시작 (행 1: 헤더, 행 2: 서브헤더)
+    row_len = ws.max_row
+    for i in range(3, row_len):  # 합계 행 제외
+        name = ws.cell(row=i, column=9).value  # I 컬럼 (성명)
+        if not name or name == "합계" or name == "총":
+            continue
+            
+        # 초과근무인정시간: K 컬럼 (11번)
+        overtime_value = ws.cell(row=i, column=11).value
+        # 출근근무일수: AD 컬럼 (30번) 
+        attendance_value = ws.cell(row=i, column=30).value
+        
+        # 초과근무시간 파싱
+        if overtime_value is None or str(overtime_value).strip() == '':
+            overtime_hours = 0
+        else:
+            overtime_str = str(overtime_value).strip()
+            if ':' in overtime_str:
+                # "0034 : 01" 형태에서 첫 번째 숫자 추출
+                overtime_hours = int(overtime_str.split(':')[0].strip())
+            else:
+                overtime_hours = int(overtime_str)
+        
+        # 출근근무일수 파싱
+        if attendance_value is None:
+            attendance_days = 0
+        else:
+            attendance_days = int(attendance_value)
+        
+        data[name] = [overtime_hours, attendance_days]
 
     print("\n%s | %s | %s | %s" %
           ("성명", "초과", "출근", "매식비"))
 
     for name in official_data_names:
-        try:
-            overtimeNameCnt[name]
-        except KeyError:
+        if name not in overtimeNameCnt:
             overtimeNameCnt[name] = 0
-        print("%s | %2d | %2d | %2d" %
-              (name, data[name][0], data[name][1], overtimeNameCnt[name]))
+        
+        if name in data:
+            print("%s | %2d | %2d | %2d" %
+                  (name, data[name][0], data[name][1], overtimeNameCnt[name]))
+        else:
+            print("%s | %2d | %2d | %2d" %
+                  (name, 0, 0, overtimeNameCnt[name]))
 
     print("\n")

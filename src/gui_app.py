@@ -6,6 +6,7 @@ from tkinter.scrolledtext import ScrolledText
 import io
 import subprocess
 import platform
+import logging
 
 from utils.config_utils import load_config, save_config
 
@@ -45,6 +46,22 @@ class TextRedirector(io.TextIOBase):
 
     def flush(self) -> None:  # pragma: no cover - nothing to flush
         pass
+
+
+class LogHandler(logging.Handler):
+    """Redirect logging to a text widget."""
+
+    def __init__(self, widget: tk.Text) -> None:
+        super().__init__()
+        self.widget = widget
+
+    def emit(self, record: logging.LogRecord) -> None:
+        msg = self.format(record)
+        self.widget.configure(state="normal")
+        self.widget.insert(tk.END, msg + "\n")
+        self.widget.see(tk.END)
+        self.widget.configure(state="disabled")
+        self.widget.update_idletasks()
 
 
 def open_folder(path: str) -> None:
@@ -90,6 +107,13 @@ def run_script() -> None:
         log_text.configure(state="disabled")
 
         sys.stdout = TextRedirector(log_text)
+        
+        # 로깅 핸들러 추가
+        log_handler = LogHandler(log_text)
+        log_handler.setLevel(logging.INFO)
+        logger = logging.getLogger()
+        logger.addHandler(log_handler)
+        
         cli_main(download_dir, work_dir, meal_fee, official_data_names_str)
         messagebox.showinfo("완료", "처리가 완료되었습니다.")
         open_folder(work_dir)
