@@ -100,6 +100,7 @@ def run_script() -> None:
     official_data_names_str = names_var.get()
 
     old_stdout = sys.stdout
+    log_handler = None
     try:
         run_button.state(["disabled"])
         log_text.configure(state="normal")
@@ -107,13 +108,13 @@ def run_script() -> None:
         log_text.configure(state="disabled")
 
         sys.stdout = TextRedirector(log_text)
-        
+
         # 로깅 핸들러 추가
         log_handler = LogHandler(log_text)
         log_handler.setLevel(logging.INFO)
-        logger = logging.getLogger()
+        logger = logging.getLogger('app')
         logger.addHandler(log_handler)
-        
+
         cli_main(download_dir, work_dir, meal_fee, official_data_names_str)
         messagebox.showinfo("완료", "처리가 완료되었습니다.")
         open_folder(work_dir)
@@ -128,6 +129,9 @@ def run_script() -> None:
         )
     finally:
         sys.stdout = old_stdout
+        if log_handler is not None:
+            logger = logging.getLogger('app')
+            logger.removeHandler(log_handler)
         run_button.state(["!disabled"])
 
 

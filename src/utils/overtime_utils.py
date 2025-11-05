@@ -121,34 +121,57 @@ def officialDataMaker(
 
     data = {}
 
+    # 헤더에서 필요한 컬럼 인덱스 찾기
+    header_map = {}
+    for col_idx in range(1, ws.max_column + 1):
+        header_value = ws.cell(row=1, column=col_idx).value
+        if header_value in ['성명', '초과근무인정시간', '출근근무일수']:
+            header_map[header_value] = col_idx
+
+    if '성명' not in header_map:
+        logging.warning("'성명' 헤더를 찾을 수 없습니다.")
+        return
+    if '초과근무인정시간' not in header_map:
+        logging.warning("'초과근무인정시간' 헤더를 찾을 수 없습니다.")
+        return
+    if '출근근무일수' not in header_map:
+        logging.warning("'출근근무일수' 헤더를 찾을 수 없습니다.")
+        return
+
+    name_col = header_map['성명']
+    overtime_col = header_map['초과근무인정시간']
+    attendance_col = header_map['출근근무일수']
+
     # 데이터는 행 3부터 시작 (행 1: 헤더, 행 2: 서브헤더)
     row_len = ws.max_row
-    for i in range(3, row_len):  # 합계 행 제외
-        name = ws.cell(row=i, column=9).value  # I 컬럼 (성명)
+    for i in range(3, row_len + 1):  # 합계 행 제외
+        name = ws.cell(row=i, column=name_col).value
         if not name or name == "합계" or name == "총":
             continue
-            
-        # 초과근무인정시간: K 컬럼 (11번)
-        overtime_value = ws.cell(row=i, column=11).value
-        # 출근근무일수: AD 컬럼 (30번) 
-        attendance_value = ws.cell(row=i, column=30).value
+
+        # 초과근무인정시간
+        overtime_value = ws.cell(row=i, column=overtime_col).value
+        # 출근근무일수
+        attendance_value = ws.cell(row=i, column=attendance_col).value
         
         # 초과근무시간 파싱
-        if overtime_value is None or str(overtime_value).strip() == '':
-            overtime_hours = 0
-        else:
-            overtime_str = str(overtime_value).strip()
-            if ':' in overtime_str:
-                # "0034 : 01" 형태에서 첫 번째 숫자 추출
-                overtime_hours = int(overtime_str.split(':')[0].strip())
-            else:
-                overtime_hours = int(overtime_str)
-        
+        overtime_hours = 0
+        if overtime_value:
+            try:
+                # Handles "34" and "0034 : 01" formats
+                overtime_str = str(overtime_value).split(':')[0].strip()
+                if overtime_str:
+                    overtime_hours = int(overtime_str)
+            except ValueError:
+                logging.warning(f"Could not parse overtime value '{overtime_value}' for name '{name}'.")
+
         # 출근근무일수 파싱
-        if attendance_value is None:
-            attendance_days = 0
-        else:
-            attendance_days = int(attendance_value)
+        attendance_days = 0
+        if attendance_value:
+            try:
+                attendance_days = int(attendance_value)
+            except (ValueError, TypeError):
+                logging.warning(f"Could not parse attendance days value '{attendance_value}' for name '{name}'.")
         
         data[name] = [overtime_hours, attendance_days]
 
@@ -156,14 +179,9 @@ def officialDataMaker(
           ("성명", "초과", "출근", "매식비"))
 
     for name in official_data_names:
-        if name not in overtimeNameCnt:
-            overtimeNameCnt[name] = 0
-        
-        if name in data:
-            print("%s | %2d | %2d | %2d" %
-                  (name, data[name][0], data[name][1], overtimeNameCnt[name]))
-        else:
-            print("%s | %2d | %2d | %2d" %
-                  (name, 0, 0, overtimeNameCnt[name]))
+        overtime_count = overtimeNameCnt.get(name, 0)
+        overtime_hours, attendance_days = data.get(name, [0, 0])
+        print("%s | %2d | %2d | %2d" %
+              (name, overtime_hours, attendance_days, overtime_count))
 
     print("\n")
