@@ -23,3 +23,23 @@ testpaths = ["tests"]
 dev = [
     "pytest>=8.4.0",
 ]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+explicit_package_bases = true
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = "openpyxl.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pandas.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pytest.*"
+ignore_missing_imports = true

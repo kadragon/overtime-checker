@@ -3,7 +3,7 @@ Includes functions for processing overtime data, such as checking pay conditions
 counting overtime instances, and preparing data for official reports.
 """
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List
 import datetime
 
 import openpyxl
@@ -67,7 +67,7 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
     wb = openpyxl.load_workbook(filename)
     ws = wb[wb.sheetnames[0]]
 
-    dateCnt = {}
+    dateCnt: Dict[str, int] = {}
     maxCnt = 0
 
     for row_data in ws.iter_rows(2):
@@ -99,7 +99,8 @@ def overtimeCnt(filename: str) -> Dict[str, int]:
 
         maxCnt += 1
 
-    dateCnt = sorted(dateCnt.items())
+    # Sort dates for potential future use
+    sorted_dates = sorted(dateCnt.items())
 
     return overtimeNameCnt
 

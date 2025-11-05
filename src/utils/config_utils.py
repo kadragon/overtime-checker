@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
 
@@ -17,7 +17,7 @@ def load_config(path: str = CONFIG_FILE) -> Dict[str, Any]:
     if os.path.isfile(path):
         with open(path, "r", encoding="utf-8") as f:
             try:
-                return json.load(f)
+                return cast(Dict[str, Any], json.load(f))
             except json.JSONDecodeError:
                 # broken file fallback to defaults
                 return DEFAULT_CONFIG.copy()

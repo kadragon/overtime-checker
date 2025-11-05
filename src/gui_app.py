@@ -3,6 +3,7 @@ import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
+from typing import TypedDict
 import io
 import subprocess
 import platform
@@ -21,8 +22,16 @@ project_root = os.path.dirname(os.path.dirname(__file__))
 # Load configuration from pickle file
 config = load_config()
 
+
 # Define style configuration
-style_config = {
+class StyleConfig(TypedDict):
+    primary_color: str
+    secondary_color: str
+    background_color: str
+    font: tuple[str, int]
+
+
+style_config: StyleConfig = {
     "primary_color": "#072d6e",
     "secondary_color": "#03519c",
     "background_color": "#F5F5F5",
@@ -68,7 +77,7 @@ def open_folder(path: str) -> None:
     """Open folder in OS file explorer."""
     try:
         if platform.system() == "Windows":
-            os.startfile(path)
+            os.startfile(path)  # type: ignore[attr-defined]
         elif platform.system() == "Darwin":
             subprocess.Popen(["open", path])
         else:
