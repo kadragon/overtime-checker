@@ -2,13 +2,19 @@ import os
 import json
 from typing import Any, Dict
 
+# Configuration keys as constants to prevent typos
+DOWNLOAD_DIR_KEY = "DOWNLOAD_DIR"
+WORK_DIR_KEY = "WORK_DIR"
+MEAL_FEE_KEY = "MEAL_FEE"
+OFFICIAL_DATA_NAMES_STR_KEY = "OFFICIAL_DATA_NAMES_STR"
+
 CONFIG_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
 
 DEFAULT_CONFIG: Dict[str, Any] = {
-    "DOWNLOAD_DIR": "",
-    "WORK_DIR": "",
-    "MEAL_FEE": "5500",
-    "OFFICIAL_DATA_NAMES_STR": "",
+    DOWNLOAD_DIR_KEY: "",
+    WORK_DIR_KEY: "",
+    MEAL_FEE_KEY: "5500",
+    OFFICIAL_DATA_NAMES_STR_KEY: "",
 }
 
 
