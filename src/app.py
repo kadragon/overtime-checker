@@ -13,7 +13,14 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from rich.table import Table
 from rich.traceback import install
 
-from utils.config_utils import load_config, save_config
+from utils.config_utils import (
+    load_config,
+    save_config,
+    DOWNLOAD_DIR_KEY,
+    WORK_DIR_KEY,
+    MEAL_FEE_KEY,
+    OFFICIAL_DATA_NAMES_STR_KEY,
+)
 from main import main as cli_main
 
 # Rich traceback 활성화 (더 예쁜 에러 메시지)
@@ -40,47 +47,47 @@ def get_user_inputs(config: Dict[str, Any]) -> Dict[str, str]:
 
     download_dir = Prompt.ask(
         "📁 [yellow]다운로드 폴더[/yellow]",
-        default=config.get("DOWNLOAD_DIR", "")
+        default=config.get(DOWNLOAD_DIR_KEY, "")
     ).strip()
 
     work_dir = Prompt.ask(
         "💾 [yellow]작업결과 저장 폴더[/yellow]",
-        default=config.get("WORK_DIR", "")
+        default=config.get(WORK_DIR_KEY, "")
     ).strip()
 
     meal_fee = Prompt.ask(
         "💰 [yellow]매식비 기준 금액[/yellow]",
-        default=config.get("MEAL_FEE", "5500")
+        default=config.get(MEAL_FEE_KEY, "5500")
     ).strip()
 
     names_str = Prompt.ask(
         "👤 [yellow]대상자 이름[/yellow] [dim](쉼표로 구분)[/dim]",
-        default=config.get("OFFICIAL_DATA_NAMES_STR", "")
+        default=config.get(OFFICIAL_DATA_NAMES_STR_KEY, "")
     ).strip()
 
     return {
-        "DOWNLOAD_DIR": download_dir,
-        "WORK_DIR": work_dir,
-        "MEAL_FEE": meal_fee,
-        "OFFICIAL_DATA_NAMES_STR": names_str
+        DOWNLOAD_DIR_KEY: download_dir,
+        WORK_DIR_KEY: work_dir,
+        MEAL_FEE_KEY: meal_fee,
+        OFFICIAL_DATA_NAMES_STR_KEY: names_str
     }
 
 
 def validate_inputs(inputs: Dict[str, str]) -> bool:
     """입력값 검증"""
-    if not inputs["DOWNLOAD_DIR"] or not inputs["WORK_DIR"]:
+    if not inputs[DOWNLOAD_DIR_KEY] or not inputs[WORK_DIR_KEY]:
         console.print("\n[bold red]❌ 오류:[/bold red] DOWNLOAD_DIR과 WORK_DIR은 필수 입력값입니다.")
         return False
 
-    if not os.path.exists(inputs["DOWNLOAD_DIR"]):
-        console.print(f"\n[bold red]❌ 오류:[/bold red] 다운로드 폴더가 존재하지 않습니다: {inputs['DOWNLOAD_DIR']}")
+    if not os.path.exists(inputs[DOWNLOAD_DIR_KEY]):
+        console.print(f"\n[bold red]❌ 오류:[/bold red] 다운로드 폴더가 존재하지 않습니다: {inputs[DOWNLOAD_DIR_KEY]}")
         return False
 
     # work_dir은 없으면 생성
-    if not os.path.exists(inputs["WORK_DIR"]):
+    if not os.path.exists(inputs[WORK_DIR_KEY]):
         try:
-            os.makedirs(inputs["WORK_DIR"], exist_ok=True)
-            console.print(f"[green]✓[/green] 작업 폴더 생성: {inputs['WORK_DIR']}")
+            os.makedirs(inputs[WORK_DIR_KEY], exist_ok=True)
+            console.print(f"[green]✓[/green] 작업 폴더 생성: {inputs[WORK_DIR_KEY]}")
         except Exception as e:
             console.print(f"\n[bold red]❌ 오류:[/bold red] 작업 폴더 생성 실패: {e}")
             return False
@@ -94,10 +101,10 @@ def show_config_summary(inputs: Dict[str, str]) -> None:
     table.add_column("항목", style="cyan", width=20)
     table.add_column("값", style="white")
 
-    table.add_row("📁 다운로드 폴더", inputs["DOWNLOAD_DIR"])
-    table.add_row("💾 작업 폴더", inputs["WORK_DIR"])
-    table.add_row("💰 매식비 기준", inputs["MEAL_FEE"])
-    table.add_row("👤 대상자 이름", inputs["OFFICIAL_DATA_NAMES_STR"] or "[dim]없음[/dim]")
+    table.add_row("📁 다운로드 폴더", inputs[DOWNLOAD_DIR_KEY])
+    table.add_row("💾 작업 폴더", inputs[WORK_DIR_KEY])
+    table.add_row("💰 매식비 기준", inputs[MEAL_FEE_KEY])
+    table.add_row("👤 대상자 이름", inputs[OFFICIAL_DATA_NAMES_STR_KEY] or "[dim]없음[/dim]")
 
     console.print()
     console.print(table)
@@ -115,16 +122,16 @@ def run_processing(inputs: Dict[str, str]) -> None:
     try:
         # main 함수 호출
         cli_main(
-            download_dir=inputs["DOWNLOAD_DIR"],
-            work_dir=inputs["WORK_DIR"],
-            meal_fee=inputs["MEAL_FEE"],
-            official_data_names_str=inputs["OFFICIAL_DATA_NAMES_STR"]
+            download_dir=inputs[DOWNLOAD_DIR_KEY],
+            work_dir=inputs[WORK_DIR_KEY],
+            meal_fee=inputs[MEAL_FEE_KEY],
+            official_data_names_str=inputs[OFFICIAL_DATA_NAMES_STR_KEY]
         )
 
         console.print()
         console.print(Panel.fit(
             "[bold green]✅ 처리가 완료되었습니다![/bold green]\n\n"
-            f"📂 결과 폴더: [cyan]{inputs['WORK_DIR']}[/cyan]",
+            f"📂 결과 폴더: [cyan]{inputs[WORK_DIR_KEY]}[/cyan]",
             border_style="green",
             title="완료"
         ))
